@@ -3,23 +3,23 @@
  * @author jscastro / https://github.com/jscastro76
  */
 
-const THREE = require("./three.js");
-const CameraSync = require("./camera/CameraSync.js");
-const utils = require("./utils/utils.js");
-const SunCalc = require("./utils/suncalc.js");
-const ThreeboxConstants = require("./utils/constants.js");
-const Objects = require("./objects/objects.js");
-const material = require("./utils/material.js");
-const sphere = require("./objects/sphere.js");
-const extrusion = require("./objects/extrusion.js");
-const label = require("./objects/label.js");
-const tooltip = require("./objects/tooltip.js");
-const loader = require("./objects/loadObj.js");
-const Object3D = require("./objects/Object3D.js");
-const line = require("./objects/line.js");
-const tube = require("./objects/tube.js");
-const LabelRenderer = require("./objects/LabelRenderer.js");
-const BuildingShadows = require("./objects/effects/BuildingShadows.js");
+import * as THREE from 'three';
+import CameraSync from './camera/CameraSync.js';
+import utils from './utils/utils.js';
+import SunCalc from './utils/suncalc.js';
+import ThreeboxConstants from './utils/constants.js';
+import Objects from './objects/objects.js';
+import material from './utils/material.js';
+import sphere from './objects/sphere.js';
+import extrusion from './objects/extrusion.js';
+import label from './objects/label.js';
+import tooltip from './objects/tooltip.js';
+import loader from './objects/loadObj.js';
+import Object3D from './objects/Object3D.js';
+import line from './objects/line.js';
+import tube from './objects/tube.js';
+import LabelRenderer from './objects/LabelRenderer.js';
+import BuildingShadows from './objects/effects/BuildingShadows.js';
 
 function Threebox(map, glContext, options){
 
@@ -1196,5 +1196,6 @@ var defaultOptions = {
 	sky: false,
 	terrain: false
 }
-module.exports = exports = Threebox;
+
+export default Threebox;
 

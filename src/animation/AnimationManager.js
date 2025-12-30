@@ -2,8 +2,8 @@
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
 */
-const THREE = require('../three.js');
-const utils = require("../utils/utils.js");
+import * as THREE from 'three';
+import utils from '../utils/utils.js';
 
 function AnimationManager(map) {
 
@@ -478,4 +478,5 @@ const defaults = {
         trackHeading: true
     }
 }
-module.exports = exports = AnimationManager;
+
+export default AnimationManager;

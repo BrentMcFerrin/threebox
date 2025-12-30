@@ -1,7 +1,9 @@
-const utils = require("../utils/utils.js");
-const Objects = require('./objects.js');
-const CSS2D = require('./CSS2DRenderer.js');
-var THREE = require("../three.js");
+/**
+ * @author jscastro / https://github.com/jscastro76
+ */
+import utils from '../utils/utils.js';
+import Objects from './objects.js';
+import { CSS2DObject } from './CSS2DRenderer.js';
 
 function Tooltip(obj) {
 
@@ -11,7 +13,7 @@ function Tooltip(obj) {
 
 		let divToolTip = Objects.prototype.drawTooltip(obj.text, obj.mapboxStyle);
 
-		let tooltip = new CSS2D.CSS2DObject(divToolTip);
+		let tooltip = new CSS2DObject(divToolTip);
 		tooltip.visible = false;
 		tooltip.name = "tooltip";
 		var userScaleGroup = Objects.prototype._makeGroup(tooltip, obj);
@@ -21,4 +23,4 @@ function Tooltip(obj) {
 
 }
 
-module.exports = exports = Tooltip;
+export default Tooltip;

@@ -1,14 +1,14 @@
 /**
  * @author jscastro / https://github.com/jscastro76
  */
-const Objects = require('./objects.js');
-const utils = require("../utils/utils.js");
-const THREE = require("../three.js");
-const Object3D = require('./Object3D.js');
+import * as THREE from 'three';
+import Objects from './objects.js';
+import utils from '../utils/utils.js';
+import Object3D from './Object3D.js';
 
 /**
- * 
- * @param {any} opt must fit the default defined in Objects.prototype._defaults.extrusion 
+ *
+ * @param {any} opt must fit the default defined in Objects.prototype._defaults.extrusion
  * @param {arr} opt.coordinates could receive a feature.geometry.coordinates
  */
 function extrusion(opt) {
@@ -56,4 +56,4 @@ extrusion.prototype = {
 
 }
 
-module.exports = exports = extrusion;
+export default extrusion;

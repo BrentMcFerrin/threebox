@@ -1,6 +1,6 @@
-var THREE = require("../three.js");
-var Constants = require("./constants.js");
-var validate = require("./validate.js");
+import * as THREE from 'three';
+import Constants from './constants.js';
+import Validate from './validate.js';
 
 var utils = {
 
@@ -413,8 +413,8 @@ var utils = {
 
 		return validatedOutput
 	},
-	Validator: new validate(),
+	Validator: new Validate(),
 	exposedMethods: ['projectToWorld', 'projectedUnitsPerMeter', 'extend', 'unprojectFromWorld']
 }
 
-module.exports = exports = utils
+export default utils;

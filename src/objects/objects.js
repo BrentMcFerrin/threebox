@@ -2,11 +2,11 @@
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
  */
-const utils = require("../utils/utils.js");
-const material = require("../utils/material.js");
-const THREE = require('../three.js');
-const AnimationManager = require("../animation/AnimationManager.js");
-const CSS2D = require("./CSS2DRenderer.js");
+import * as THREE from 'three';
+import utils from '../utils/utils.js';
+import material from '../utils/material.js';
+import AnimationManager from '../animation/AnimationManager.js';
+import { CSS2DObject } from './CSS2DRenderer.js';
 
 function Objects(){
 
@@ -432,7 +432,7 @@ Objects.prototype = {
 					const size = box.getSize(new THREE.Vector3());
 					let bottomLeft = { x: box.max.x, y: box.max.y, z: box.min.z };
 					obj.removeCSS2D(objName);
-					let c = new CSS2D.CSS2DObject(element);
+					let c = new CSS2DObject(element);
 					c.name = objName;
 					c.position.set(((-size.x * 0.5) - obj.model.position.x - center.x + bottomLeft.x), ((-size.y * 0.5) - obj.model.position.y - center.y + bottomLeft.y), size.z * height); 
 					c.visible = false; //only visible on mouseover or selected
@@ -1108,4 +1108,4 @@ Objects.prototype = {
 	}
 }
 
-module.exports = exports = Objects;
+export default Objects;

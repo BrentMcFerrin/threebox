@@ -2,11 +2,11 @@
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
 */
-const utils = require("../utils/utils.js");
-const material = require("../utils/material.js");
-const Objects = require('./objects.js');
-const THREE = require("../three.js");
-const Object3D = require('./Object3D.js');
+import * as THREE from 'three';
+import utils from '../utils/utils.js';
+import material from '../utils/material.js';
+import Objects from './objects.js';
+import Object3D from './Object3D.js';
 
 function tube(opt, world){
 
@@ -25,5 +25,4 @@ function tube(opt, world){
 	return new Object3D({ obj: obj, units: opt.units, anchor: opt.anchor, adjustment: opt.adjustment, bbox: opt.bbox, tooltip: opt.tooltip, raycasted: opt.raycasted });
 }
 
-module.exports = exports = tube;
-
+export default tube;

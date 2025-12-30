@@ -2,9 +2,9 @@
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
  */
-const THREE = require("../three.js");
-const utils = require("../utils/utils.js");
-const ThreeboxConstants = require("../utils/constants.js");
+import * as THREE from 'three';
+import utils from '../utils/utils.js';
+import ThreeboxConstants from '../utils/constants.js';
 
 function CameraSync(map, camera, world) {
     //    console.log("CameraSync constructor");
@@ -295,4 +295,4 @@ CameraSync.prototype = {
     }
 }
 
-module.exports = exports = CameraSync;
+export default CameraSync;

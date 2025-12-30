@@ -17,7 +17,7 @@ Validate.prototype = {
             console.error("Coords length must be at least 2")
             return
         }
-    
+
         for (const member of input) {
             if (member.constructor !== Number) {
                 console.error("Coords values must be numbers")
@@ -27,7 +27,7 @@ Validate.prototype = {
 
         if (Math.abs(input[1]) > 90) {
             console.error("Latitude must be between -90 and 90")
-            return                    
+            return
         }
 
         return input
@@ -45,7 +45,7 @@ Validate.prototype = {
         for (const coord of input){
             if (!scope.Coords(coord)) {
                 console.error("Each coordinate in a line must be a valid Coords type")
-                return                    
+                return
             }
 
         }
@@ -63,7 +63,7 @@ Validate.prototype = {
 
                 if (!['x', 'y', 'z'].includes(key)) {
                     console.error('Rotation parameters must be x, y, or z')
-                    return                            
+                    return
                 }
                 if (input[key].constructor !== Number) {
                     console.error('Individual rotation values must be numbers')
@@ -85,14 +85,14 @@ Validate.prototype = {
         if (input.constructor === Number) {
             input = {x:input, y:input, z: input}
         }
-        
+
         else if (input.constructor === Object) {
 
             for (const key of Object.keys(input)){
 
                 if (!['x', 'y', 'z'].includes(key)) {
                     console.error('Scale parameters must be x, y, or z')
-                    return                            
+                    return
                 }
                 if (input[key].constructor !== Number) {
                     console.error('Individual scale values must be numbers')
@@ -111,5 +111,4 @@ Validate.prototype = {
 
 }
 
-
-module.exports = exports = Validate;
+export default Validate;

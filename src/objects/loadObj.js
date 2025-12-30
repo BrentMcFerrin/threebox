@@ -2,13 +2,15 @@
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
  */
-const utils = require("../utils/utils.js");
-const Objects = require('./objects.js');
-const OBJLoader = require("./loaders/OBJLoader.js");
-const MTLLoader = require("./loaders/MTLLoader.js");
-const FBXLoader = require("./loaders/FBXLoader.js");
-const GLTFLoader = require("./loaders/GLTFLoader.js");
-const ColladaLoader = require("./loaders/ColladaLoader.js");
+import * as THREE from 'three';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
+import utils from '../utils/utils.js';
+import Objects from './objects.js';
+
 const objLoader = new OBJLoader();
 const materialLoader = new MTLLoader();
 const gltfLoader = new GLTFLoader();
@@ -134,4 +136,4 @@ function loadObj(options, cb, promise) {
 
 }
 
-module.exports = exports = loadObj;
+export default loadObj;

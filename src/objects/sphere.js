@@ -2,11 +2,11 @@
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
 */
-const utils = require("../utils/utils.js");
-const material = require("../utils/material.js");
-const THREE = require('../three.js');
-const Objects = require('./objects.js');
-const Object3D = require('./Object3D.js');
+import * as THREE from 'three';
+import utils from '../utils/utils.js';
+import material from '../utils/material.js';
+import Objects from './objects.js';
+import Object3D from './Object3D.js';
 
 function Sphere(opt) {
 
@@ -19,5 +19,4 @@ function Sphere(opt) {
 
 }
 
-
-module.exports = exports = Sphere;
+export default Sphere;

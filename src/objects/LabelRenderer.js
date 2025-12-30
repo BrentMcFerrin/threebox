@@ -2,13 +2,13 @@
  * @author jscastro / https://github.com/jscastro76
  */
 
-const THREE = require("./CSS2DRenderer.js");
+import { CSS2DRenderer } from './CSS2DRenderer.js';
 
 function LabelRenderer(map) {
 
 	this.map = map;
 
-	this.renderer = new THREE.CSS2DRenderer();
+	this.renderer = new CSS2DRenderer();
 
 	this.renderer.setSize(this.map.getCanvas().clientWidth, this.map.getCanvas().clientHeight);
 	this.renderer.domElement.style.position = 'absolute';
@@ -42,14 +42,14 @@ function LabelRenderer(map) {
 	this.render = async function (scene, camera) {
 		this.scene = scene;
 		this.camera = camera;
-		return new Promise((resolve) => { resolve(this.renderer.render(scene, camera)) }); 
+		return new Promise((resolve) => { resolve(this.renderer.render(scene, camera)) });
 	}
 
 	//[jscastro] method to toggle Layer visibility
 	this.toggleLabels = async function (layerId, visible) {
 		return new Promise((resolve) => {
 			resolve(this.setVisibility(layerId, visible, this.scene, this.camera, this.renderer));
-		}) 
+		})
 	};
 
 	//[jscastro] method to set visibility
@@ -67,4 +67,4 @@ function LabelRenderer(map) {
 
 }
 
-module.exports = exports = LabelRenderer;
+export default LabelRenderer;

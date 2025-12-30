@@ -2,8 +2,8 @@
  * @author peterqliu / https://github.com/peterqliu
  * @author jscastro / https://github.com/jscastro76
  */
-const Objects = require('./objects.js');
-const utils = require("../utils/utils.js");
+import Objects from './objects.js';
+import utils from '../utils/utils.js';
 
 function Object3D(opt) {
 	opt = utils._validate(opt, Objects.prototype._defaults.Object3D);
@@ -29,4 +29,4 @@ function Object3D(opt) {
 	return userScaleGroup
 }
 
-module.exports = exports = Object3D;
+export default Object3D;

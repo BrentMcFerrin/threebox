@@ -1,9 +1,9 @@
 /**
  * @author jscastro / https://github.com/jscastro76
  */
-const utils = require("../utils/utils.js");
-const Objects = require('./objects.js');
-const CSS2D = require('./CSS2DRenderer.js');
+import utils from '../utils/utils.js';
+import Objects from './objects.js';
+import { CSS2DObject } from './CSS2DRenderer.js';
 
 function Label(obj) {
 
@@ -11,7 +11,7 @@ function Label(obj) {
 
 	let div = Objects.prototype.drawLabelHTML(obj.htmlElement, obj.cssClass);
 
-	let label = new CSS2D.CSS2DObject(div);
+	let label = new CSS2DObject(div);
 	label.name = "label";
 	label.visible = obj.alwaysVisible;
 	label.alwaysVisible = obj.alwaysVisible;
@@ -22,5 +22,4 @@ function Label(obj) {
 	return userScaleGroup;
 }
 
-
-module.exports = exports = Label;
+export default Label;

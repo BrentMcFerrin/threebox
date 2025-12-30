@@ -1,8 +1,20 @@
 {
     "name": "threebox-plugin",
-    "version": "2.2.7",
+    "version": "3.0.0",
+    "type": "module",
     "description": "A Three.js plugin for Mapbox GL JS, using the CustomLayerInterface feature. Provides convenient methods to manage objects in lnglat coordinates, and to synchronize the map and scene cameras.",
-    "main": "main.js",
+    "main": "dist/threebox.cjs",
+    "module": "dist/threebox.js",
+    "exports": {
+        ".": {
+            "import": "./dist/threebox.js",
+            "require": "./dist/threebox.cjs"
+        }
+    },
+    "files": [
+        "dist",
+        "src"
+    ],
     "repository": {
         "type": "git",
         "url": "git+https://github.com/jscastro76/threebox.git"
@@ -14,10 +26,10 @@
     },
     "homepage": "https://github.com/jscastro76/threebox#readme",
     "scripts": {
-        "build": "browserify -p tinyify exports.js > dist/threebox.min.js && ncp ./examples/css/threebox.css ./dist/threebox.css --stopOnErr",
-        "dev": "watchify exports.js --verbose -o dist/threebox.js ",
-        "all": "browserify -p tinyify exports.js > dist/threebox.min.js && watchify exports.js --verbose -o dist/threebox.js ",
-        "test": "browserify tests/threebox-tests.js > tests/threebox-tests-bundle.js",
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "test": "vitest",
         "start": "node server.js",
         "stop": "node server.stop.js"
     },
@@ -26,13 +38,14 @@
         "example": "examples",
         "test": "tests"
     },
+    "peerDependencies": {
+        "three": ">=0.150.0"
+    },
     "devDependencies": {
-        "browserify": "^17.0.0",
-        "ncp": "^2.0.0",
-        "tape": "^5.1.1",
-        "tinyify": "^4.0.0",
-        "uglifyify": "^5.0.2",
-        "watchify": "^4.0.0"
+        "terser": "^5.44.1",
+        "three": "^0.182.0",
+        "vite": "^6.0.0",
+        "vitest": "^2.1.0"
     },
     "keywords": [
         "three.js",
