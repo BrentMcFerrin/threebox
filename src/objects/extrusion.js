@@ -49,7 +49,7 @@ extrusion.prototype = {
 	},
 
 	buildGeometry: function (shape, settings) {
-		let geometry = new THREE.ExtrudeBufferGeometry(shape, settings);
+		let geometry = new THREE.ExtrudeGeometry(shape, settings);
 		geometry.computeBoundingBox();
 		return geometry;
 	}

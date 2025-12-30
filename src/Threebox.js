@@ -62,7 +62,7 @@ Threebox.prototype = {
 
 		this.renderer.setPixelRatio(window.devicePixelRatio);
 		this.renderer.setSize(this.map.getCanvas().clientWidth, this.map.getCanvas().clientHeight);
-		this.renderer.outputEncoding = THREE.sRGBEncoding;
+		this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 		this.renderer.autoClear = false;
 
 		// [jscastro] set labelRendered
