@@ -43,10 +43,16 @@ function loadObj(options, cb, promise) {
 			break;
 	}
 
-	materialLoader.withCredentials = options.withCredentials;
-	materialLoader.load(options.mtl, loadObject, () => (null), error => {
-		console.warn("No material file found " + error.stack);
-	});
+	// Only load MTL if specified, otherwise proceed directly
+	if (options.mtl) {
+		materialLoader.withCredentials = options.withCredentials;
+		materialLoader.load(options.mtl, loadObject, () => (null), error => {
+			console.warn("No material file found " + error.stack);
+			loadObject(null); // Proceed without materials on error
+		});
+	} else {
+		loadObject(null); // No MTL specified, proceed directly
+	}
 
 	function loadObject(materials) {
 

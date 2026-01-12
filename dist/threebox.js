@@ -2264,10 +2264,15 @@ function loadObj(options2, cb, promise) {
       loader = daeLoader;
       break;
   }
-  materialLoader.withCredentials = options2.withCredentials;
-  materialLoader.load(options2.mtl, loadObject, () => null, (error) => {
-    console.warn("No material file found " + error.stack);
-  });
+  if (options2.mtl) {
+    materialLoader.withCredentials = options2.withCredentials;
+    materialLoader.load(options2.mtl, loadObject, () => null, (error) => {
+      console.warn("No material file found " + error.stack);
+      loadObject(null);
+    });
+  } else {
+    loadObject(null);
+  }
   function loadObject(materials) {
     if (materials && options2.type == "mtl") {
       materials.preload();
