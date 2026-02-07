@@ -14,9 +14,14 @@ class BuildingShadows {
 		this.map = map;
 		// find layer source
 		const sourceName = this.map.getLayer(this.buildingsLayerId).source;
-		this.source = (this.map.style.sourceCaches || this.map.style._otherSourceCaches)[sourceName];
+		// Handle Mapbox v1, v2, and v3 internal API differences for source cache access
+		const style = this.map.style;
+		this.source = style.sourceCaches?.[sourceName] ||
+		              style._otherSourceCaches?.[sourceName] ||
+		              style._sourceCaches?.[sourceName];
+
 		if (!this.source) {
-			console.warn(`Can't find layer ${this.buildingsLayerId}'s source.`);
+			console.warn(`BuildingShadows: Can't find layer ${this.buildingsLayerId}'s source.`);
 		}
 
 		// vertex shader of fill-extrusion layer is different in mapbox v1 and v2.
@@ -30,13 +35,22 @@ class BuildingShadows {
 		const vertexShader = gl.createShader(gl.VERTEX_SHADER);
 		gl.shaderSource(vertexShader, vertexSource);
 		gl.compileShader(vertexShader);
+		if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+			console.error('BuildingShadows vertex shader error:', gl.getShaderInfoLog(vertexShader));
+		}
 		const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 		gl.shaderSource(fragmentShader, fragmentSource);
 		gl.compileShader(fragmentShader);
+		if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+			console.error('BuildingShadows fragment shader error:', gl.getShaderInfoLog(fragmentShader));
+		}
 		this.program = gl.createProgram();
 		gl.attachShader(this.program, vertexShader);
 		gl.attachShader(this.program, fragmentShader);
 		gl.linkProgram(this.program);
+		if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+			console.error('BuildingShadows program link error:', gl.getProgramInfoLog(this.program));
+		}
 		gl.validateProgram(this.program);
 		this.uMatrix = gl.getUniformLocation(this.program, "u_matrix");
 		this.uHeightFactor = gl.getUniformLocation(this.program, "u_height_factor");
@@ -64,19 +78,31 @@ class BuildingShadows {
 		const pos = this.tb.getSunPosition(this.tb.lightDateTime, [lng, lat]);
 		gl.uniform1f(this.uAltitude, (pos.altitude > this.minAltitude ? pos.altitude : 0));
 		gl.uniform1f(this.uAzimuth, pos.azimuth + 3 * Math.PI / 2);
-		//this.opacity = Math.sin(Math.max(pos.altitude, 0)) * 0.6;
 		gl.enable(gl.BLEND);
-		//gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.DST_ALPHA, gl.SRC_ALPHA);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-		var ext = gl.getExtension('EXT_blend_minmax');
-		//gl.blendEquationSeparate(gl.FUNC_SUBTRACT, ext.MIN_EXT);
-		//gl.blendEquation(gl.FUNC_ADD);
 		gl.disable(gl.DEPTH_TEST);
 		for (const coord of coords) {
 			const tile = this.source.getTile(coord);
-			const bucket = tile.getBucket(buildingsLayer);
+
+			let bucket = tile.getBucket(buildingsLayer);
+			// Mapbox v3 fallback: try direct bucket access by layer ID
+			if (!bucket && tile.buckets) {
+				bucket = tile.buckets[this.buildingsLayerId];
+			}
 			if (!bucket) continue;
-			const [heightBuffer, baseBuffer] = bucket.programConfigurations.programConfigurations[this.buildingsLayerId]._buffers;
+
+			// Handle Mapbox v3 internal API changes for buffer access
+			let heightBuffer, baseBuffer;
+			const programConfig = bucket.programConfigurations?.programConfigurations?.[this.buildingsLayerId];
+			if (programConfig?._buffers) {
+				[heightBuffer, baseBuffer] = programConfig._buffers;
+			} else if (programConfig?.getBuffers) {
+				const buffers = programConfig.getBuffers();
+				heightBuffer = buffers[0];
+				baseBuffer = buffers[1];
+			} else {
+				continue;
+			}
 			gl.uniformMatrix4fv(this.uMatrix, false, (coord.posMatrix || coord.projMatrix));
 			gl.uniform1f(this.uHeightFactor, Math.pow(2, coord.overscaledZ) / tile.tileSize / 8);
 			for (const segment of bucket.segments.get()) {

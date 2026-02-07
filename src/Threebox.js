@@ -113,7 +113,14 @@ Threebox.prototype = {
 		this.map.on('style.load', function () {
 			this.tb.zoomLayers = [];
 			//[jscastro] if multiLayer, create a by default layer in the map, so tb.update won't be needed in client side to avoid duplicating calls to render
-			if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: 'custom', renderingMode: '3d', map: this, onAdd: function (map, gl) { }, render: function (gl, matrix) { this.map.tb.update(); } })
+			if (this.tb.options.multiLayer) this.addLayer({
+				id: "threebox_layer",
+				type: 'custom',
+				renderingMode: '3d',
+				map: this,
+				onAdd: function (map, gl) { },
+				render: function (gl, matrix) { this.map.tb.update(); }
+			})
 
 			this.once('idle', () => {
 				this.tb.setObjectsScale();
@@ -681,36 +688,58 @@ Threebox.prototype = {
 	// Objects
 	sphere: function (options) {
 		this.setDefaultView(options, this.options);
-		return sphere(options, this.world)
+		let obj = sphere(options, this.world);
+		obj.threebox = this;
+		return obj;
 	},
 
-	line: line,
+	line: function (options) {
+		let obj = line(options);
+		obj.threebox = this;
+		return obj;
+	},
 
-	label: label,
+	label: function (options) {
+		let obj = label(options);
+		obj.threebox = this;
+		return obj;
+	},
 
-	tooltip: tooltip,
+	tooltip: function (options) {
+		let obj = tooltip(options);
+		obj.threebox = this;
+		return obj;
+	},
 
 	tube: function (options) {
 		this.setDefaultView(options, this.options);
-		return tube(options, this.world)
+		let obj = tube(options, this.world);
+		obj.threebox = this;
+		return obj;
 	},
 
 	extrusion: function (options) {
 		this.setDefaultView(options, this.options);
-		return extrusion(options);
+		let obj = extrusion(options);
+		obj.threebox = this;
+		return obj;
 	},
 
 	Object3D: function (options) {
 		this.setDefaultView(options, this.options);
-		return Object3D(options)
+		let obj = Object3D(options);
+		obj.threebox = this;
+		return obj;
 	},
 
 	loadObj: async function loadObj(options, cb) {
 		this.setDefaultView(options, this.options);
+		const tb = this; // capture threebox reference for callbacks
 		if (options.clone === false) {
 			return new Promise(
 				async (resolve) => {
 					loader(options, cb, async (obj) => {
+						obj.threebox = tb;
 						resolve(obj);
 					});
 				});
@@ -721,7 +750,9 @@ Threebox.prototype = {
 			if (cache) {
 				cache.promise
 					.then(obj => {
-						cb(obj.duplicate(options));
+						let dupe = obj.duplicate(options);
+						dupe.threebox = tb;
+						cb(dupe);
 					})
 					.catch(err => {
 						this.objectsCache.delete(options.obj);
@@ -732,6 +763,7 @@ Threebox.prototype = {
 					promise: new Promise(
 						async (resolve, reject) => {
 							loader(options, cb, async (obj) => {
+								obj.threebox = tb;
 								if (obj.duplicate) {
 									resolve(obj.duplicate());
 								} else {
@@ -894,7 +926,7 @@ Threebox.prototype = {
 		this.labelRenderer.toggleLabels(layerId, visible);
 	},
 
-	update: function () {
+	update: function (matrix) {
 
 		if (this.map.repaint) this.map.repaint = false
 
@@ -907,6 +939,19 @@ Threebox.prototype = {
 
 		// Render the scene and repaint the map
 		this.renderer.resetState(); //update threejs r126
+		// Reset pixel store params that Mapbox sets - these aren't allowed for 3D texture uploads
+		const gl = this.renderer.getContext();
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+
+		// Mapbox v3 fix: Re-enable depth testing
+		// Mapbox v3 disables depth testing before calling custom layer render
+		if (this.mapboxVersion >= 3.0) {
+			gl.enable(gl.DEPTH_TEST);
+			gl.depthFunc(gl.LESS);
+			gl.depthMask(true);
+		}
+
 		this.renderer.render(this.scene, this.camera);
 
 		// [jscastro] Render any label
@@ -917,6 +962,7 @@ Threebox.prototype = {
 	add: function (obj, layerId, sourceId) {
 		//[jscastro] remove the tooltip if not enabled
 		if (!this.enableTooltips && obj.tooltip) { obj.tooltip.visibility = false };
+		obj.threebox = this; // store reference to threebox instance
 		this.world.add(obj);
 		if (layerId) {
 			obj.layer = layerId;
@@ -1035,8 +1081,9 @@ Threebox.prototype = {
 
 		this.lights.dirLight.position.set(azSin, azCos, alt);
 		this.lights.dirLight.position.multiplyScalar(radius);
-		this.lights.dirLight.intensity = Math.max(alt, 0);
-		this.lights.hemiLight.intensity = Math.max(alt * 1, 0.1);
+		// Intensities scaled up for physically-based lighting (Three.js r155+)
+		this.lights.dirLight.intensity = Math.max(alt, 0) * 5;
+		this.lights.hemiLight.intensity = Math.max(alt * 1, 0.1) * 3;
 		//console.log("Intensity:" + this.lights.dirLight.intensity);
 		this.lights.dirLight.updateMatrixWorld();
 		this.updateLightHelper();
@@ -1115,25 +1162,26 @@ Threebox.prototype = {
 	},
 
 	defaultLights: function () {
-
-		this.lights.ambientLight = new THREE.AmbientLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.75);
+		// Light intensities scaled up for physically-based lighting (Three.js r155+)
+		// Original values were designed for legacy lighting mode
+		this.lights.ambientLight = new THREE.AmbientLight(new THREE.Color('hsl(0, 0%, 100%)'), 3);
 		this.scene.add(this.lights.ambientLight);
 
-		this.lights.dirLightBack = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
+		this.lights.dirLightBack = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 1);
 		this.lights.dirLightBack.position.set(30, 100, 100);
 		this.scene.add(this.lights.dirLightBack);
 
-		this.lights.dirLight  = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 0.25);
+		this.lights.dirLight = new THREE.DirectionalLight(new THREE.Color('hsl(0, 0%, 100%)'), 1);
 		this.lights.dirLight.position.set(-30, 100, -100);
 		this.scene.add(this.lights.dirLight);
 
 	},
 
 	realSunlight: function (helper = false) {
-
+		// Light intensities scaled up for physically-based lighting (Three.js r155+)
 		this.renderer.shadowMap.enabled = true;
 		//this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-		this.lights.dirLight = new THREE.DirectionalLight(0xffffff, 1);
+		this.lights.dirLight = new THREE.DirectionalLight(0xffffff, 5);
 		this.scene.add(this.lights.dirLight);
 		if (helper) {
 			this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
@@ -1148,9 +1196,9 @@ Threebox.prototype = {
 		this.lights.dirLight.shadow.camera.bottom = this.lights.dirLight.shadow.camera.left = -d2;
 		this.lights.dirLight.shadow.camera.near = 1;
 		this.lights.dirLight.shadow.camera.visible = true;
-		this.lights.dirLight.shadow.camera.far = 400000000; 
+		this.lights.dirLight.shadow.camera.far = 400000000;
 
-		this.lights.hemiLight = new THREE.HemisphereLight(new THREE.Color(0xffffff), new THREE.Color(0xffffff), 0.6);
+		this.lights.hemiLight = new THREE.HemisphereLight(new THREE.Color(0xffffff), new THREE.Color(0xffffff), 3);
 		this.lights.hemiLight.color.setHSL(0.661, 0.96, 0.12);
 		this.lights.hemiLight.groundColor.setHSL(0.11, 0.96, 0.14);
 		this.lights.hemiLight.position.set(0, 0, 50);

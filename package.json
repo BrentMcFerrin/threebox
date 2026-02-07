@@ -39,7 +39,7 @@
         "test": "tests"
     },
     "peerDependencies": {
-        "three": ">=0.150.0"
+        "three": ">=0.182.0"
     },
     "devDependencies": {
         "terser": "^5.44.1",

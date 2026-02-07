@@ -175,7 +175,7 @@ Objects.prototype = {
 				model.position.add(point); // re-add the offset
 				model.rotateOnAxis(axis, theta)
 
-				tb.map.repaint = true;
+				obj.threebox.map.repaint = true;
 			}
 
 
@@ -818,13 +818,14 @@ Objects.prototype = {
 			})
 
 			obj.scaleGroup.remove(o);
-			tb.map.repaint = true;
+			obj.threebox.map.repaint = true;
 		}
 
 		//[jscastro] clone + assigning all the attributes
 		obj.duplicate = function (options) {
 
 			let dupe = obj.clone(true);	//clone the whole threebox object
+			dupe.threebox = obj.threebox; // copy threebox reference to the duplicate
 			dupe.getObjectByName("model").animations = obj.animations; //we must set this explicitly before addMethods
 			if (dupe.userData.feature) {
 				if (options && options.feature) dupe.userData.feature = options.feature;

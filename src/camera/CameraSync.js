@@ -13,11 +13,13 @@ function CameraSync(map, camera, world) {
     this.active = true;
 
     this.camera.matrixAutoUpdate = false; // We're in charge of the camera now!
+    this.camera.matrixWorldAutoUpdate = false; // Three.js r150+: prevent auto world matrix recalculation
 
     // Postion and configure the world group so we can scale it appropriately when the camera zooms
     this.world = world || new THREE.Group();
     this.world.position.x = this.world.position.y = ThreeboxConstants.WORLD_SIZE / 2
     this.world.matrixAutoUpdate = false;
+    this.world.matrixWorldAutoUpdate = false; // Three.js r150+: prevent auto world matrix recalculation
 
     // set up basic camera state
     this.state = {
@@ -101,7 +103,7 @@ CameraSync.prototype = {
         // someday @ansis set further near plane to fix precision for deckgl,so we should fix it to use mapbox-gl v1.3+ correctly
         // https://github.com/mapbox/mapbox-gl-js/commit/5cf6e5f523611bea61dae155db19a7cb19eb825c#diff-5dddfe9d7b5b4413ee54284bc1f7966d
         const nz = (t.height / 50); //min near z as coded by @ansis
-        const nearZ = Math.max(nz * pitchAngle, nz); //on changes in the pitch nz could be too low
+        let nearZ = Math.max(nz * pitchAngle, nz); //on changes in the pitch nz could be too low
 
         const h = t.height;
         const w = t.width;
@@ -118,6 +120,7 @@ CameraSync.prototype = {
         let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
         // When terrain layers are included, height of 3D layers must be modified from t_camera.z * worldSize
         if (t.elevation) cameraWorldMatrix.elements[14] = t._camera.position[2] * worldSize;
+
         //this.camera.matrixWorld.elements is equivalent to t._camera._transform
         this.camera.matrixWorld.copy(cameraWorldMatrix);
         

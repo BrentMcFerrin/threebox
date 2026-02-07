@@ -498,7 +498,7 @@ CameraSync.prototype = {
     }
     this.cameraTranslateZ = new THREE.Matrix4().makeTranslation(0, 0, this.cameraToCenterDistance);
     const nz = t.height / 50;
-    const nearZ = Math.max(nz * pitchAngle, nz);
+    let nearZ = Math.max(nz * pitchAngle, nz);
     const h = t.height;
     const w = t.width;
     if (this.camera instanceof THREE.OrthographicCamera) {
@@ -906,7 +906,7 @@ AnimationManager.prototype = {
           parameters: options2
         };
         this.animationQueue.push(entry);
-        tb.map.repaint = true;
+        this.threebox.map.repaint = true;
       } else {
         this.stop();
         options2.rotation = utils.radify(options2.rotation);
@@ -940,7 +940,7 @@ AnimationManager.prototype = {
         }
       );
       this.animationQueue.push(entry);
-      tb.map.repaint = true;
+      this.threebox.map.repaint = true;
       return this;
     };
     obj._setObject = function(options2) {
@@ -990,7 +990,7 @@ AnimationManager.prototype = {
       this.setBoundingBoxShadowFloor();
       this.setReceiveShadowFloor();
       this.updateMatrixWorld();
-      tb.map.repaint = true;
+      this.threebox.map.repaint = true;
       let e2 = { type: "ObjectChanged", detail: { object: this, action: { position: options2.position, rotation: options2.rotation, scale: options2.scale } } };
       this.dispatchEvent(e2);
     };
@@ -1008,7 +1008,7 @@ AnimationManager.prototype = {
           parameters: options2
         };
         this.animationQueue.push(entry);
-        tb.map.repaint = true;
+        this.threebox.map.repaint = true;
         return this;
       }
     };
@@ -1052,7 +1052,7 @@ AnimationManager.prototype = {
       if (obj.mixer) {
         obj.mixer.update(0.01);
       }
-      tb.map.repaint = true;
+      this.threebox.map.repaint = true;
       return this;
     };
   },
@@ -1115,7 +1115,7 @@ AnimationManager.prototype = {
             object.isPlaying = true;
             object.animationMethod = requestAnimationFrame(this.update);
             object.mixer.update(object.clock.getDelta());
-            tb.map.repaint = true;
+            object.threebox.map.repaint = true;
           }
         }
       }
@@ -1310,7 +1310,7 @@ Objects.prototype = {
         model.position.applyAxisAngle(axis, theta);
         model.position.add(point);
         model.rotateOnAxis(axis, theta);
-        tb.map.repaint = true;
+        obj.threebox.map.repaint = true;
       }, zoomScale = function(zoom) {
         return Math.pow(2, zoom);
       };
@@ -1921,10 +1921,11 @@ Objects.prototype = {
         if (m.dispose) m.dispose();
       });
       obj.scaleGroup.remove(o2);
-      tb.map.repaint = true;
+      obj.threebox.map.repaint = true;
     };
     obj.duplicate = function(options2) {
       let dupe = obj.clone(true);
+      dupe.threebox = obj.threebox;
       dupe.getObjectByName("model").animations = obj.animations;
       if (dupe.userData.feature) {
         if (options2 && options2.feature) dupe.userData.feature = options2.feature;
@@ -2324,15 +2325,15 @@ function loadObj(options2, cb, promise) {
         let specularColor;
         if (c.material.type == "MeshStandardMaterial") {
           if (c.material.metalness) {
-            c.material.metalness *= 0.1;
+            c.material.metalness *= 0.3;
           }
           if (c.material.glossiness) {
-            c.material.glossiness *= 0.25;
+            c.material.glossiness *= 0.5;
           }
-          specularColor = new THREE.Color(12, 12, 12);
+          specularColor = new THREE.Color(789516);
         } else if (c.material.type == "MeshPhongMaterial") {
-          c.material.shininess = 0.1;
-          specularColor = new THREE.Color(20, 20, 20);
+          c.material.shininess = 0.3;
+          specularColor = new THREE.Color(1315860);
         }
         if (c.material.specular && c.material.specular.isColor) {
           c.material.specular = specularColor;
@@ -2436,11 +2437,13 @@ class BuildingShadows {
     this.tb = threebox;
   }
   onAdd(map, gl) {
+    var _a2, _b2, _c;
     this.map = map;
     const sourceName = this.map.getLayer(this.buildingsLayerId).source;
-    this.source = (this.map.style.sourceCaches || this.map.style._otherSourceCaches)[sourceName];
+    const style = this.map.style;
+    this.source = ((_a2 = style.sourceCaches) == null ? void 0 : _a2[sourceName]) || ((_b2 = style._otherSourceCaches) == null ? void 0 : _b2[sourceName]) || ((_c = style._sourceCaches) == null ? void 0 : _c[sourceName]);
     if (!this.source) {
-      console.warn(`Can't find layer ${this.buildingsLayerId}'s source.`);
+      console.warn(`BuildingShadows: Can't find layer ${this.buildingsLayerId}'s source.`);
     }
     const vertexSource = this._getVertexSource();
     const fragmentSource = `
@@ -2451,13 +2454,22 @@ class BuildingShadows {
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertexShader, vertexSource);
     gl.compileShader(vertexShader);
+    if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
+      console.error("BuildingShadows vertex shader error:", gl.getShaderInfoLog(vertexShader));
+    }
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fragmentShader, fragmentSource);
     gl.compileShader(fragmentShader);
+    if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
+      console.error("BuildingShadows fragment shader error:", gl.getShaderInfoLog(fragmentShader));
+    }
     this.program = gl.createProgram();
     gl.attachShader(this.program, vertexShader);
     gl.attachShader(this.program, fragmentShader);
     gl.linkProgram(this.program);
+    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+      console.error("BuildingShadows program link error:", gl.getProgramInfoLog(this.program));
+    }
     gl.validateProgram(this.program);
     this.uMatrix = gl.getUniformLocation(this.program, "u_matrix");
     this.uHeightFactor = gl.getUniformLocation(this.program, "u_height_factor");
@@ -2473,6 +2485,7 @@ class BuildingShadows {
     this.aHeight = gl.getAttribLocation(this.program, "a_height");
   }
   render(gl, matrix) {
+    var _a2, _b2;
     if (!this.source) return;
     gl.useProgram(this.program);
     const coords = this.source.getVisibleCoordinates().reverse();
@@ -2484,13 +2497,25 @@ class BuildingShadows {
     gl.uniform1f(this.uAzimuth, pos.azimuth + 3 * Math.PI / 2);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.getExtension("EXT_blend_minmax");
     gl.disable(gl.DEPTH_TEST);
     for (const coord of coords) {
       const tile = this.source.getTile(coord);
-      const bucket = tile.getBucket(buildingsLayer);
+      let bucket = tile.getBucket(buildingsLayer);
+      if (!bucket && tile.buckets) {
+        bucket = tile.buckets[this.buildingsLayerId];
+      }
       if (!bucket) continue;
-      const [heightBuffer, baseBuffer] = bucket.programConfigurations.programConfigurations[this.buildingsLayerId]._buffers;
+      let heightBuffer, baseBuffer;
+      const programConfig = (_b2 = (_a2 = bucket.programConfigurations) == null ? void 0 : _a2.programConfigurations) == null ? void 0 : _b2[this.buildingsLayerId];
+      if (programConfig == null ? void 0 : programConfig._buffers) {
+        [heightBuffer, baseBuffer] = programConfig._buffers;
+      } else if (programConfig == null ? void 0 : programConfig.getBuffers) {
+        const buffers = programConfig.getBuffers();
+        heightBuffer = buffers[0];
+        baseBuffer = buffers[1];
+      } else {
+        continue;
+      }
       gl.uniformMatrix4fv(this.uMatrix, false, coord.posMatrix || coord.projMatrix);
       gl.uniform1f(this.uHeightFactor, Math.pow(2, coord.overscaledZ) / tile.tileSize / 8);
       for (const segment of bucket.segments.get()) {
@@ -2638,10 +2663,17 @@ Threebox.prototype = {
     this.enableHelpTooltips = this.options.enableHelpTooltips || false;
     this.map.on("style.load", function() {
       this.tb.zoomLayers = [];
-      if (this.tb.options.multiLayer) this.addLayer({ id: "threebox_layer", type: "custom", renderingMode: "3d", map: this, onAdd: function(map2, gl) {
-      }, render: function(gl, matrix) {
-        this.map.tb.update();
-      } });
+      if (this.tb.options.multiLayer) this.addLayer({
+        id: "threebox_layer",
+        type: "custom",
+        renderingMode: "3d",
+        map: this,
+        onAdd: function(map2, gl) {
+        },
+        render: function(gl, matrix) {
+          this.map.tb.update();
+        }
+      });
       this.once("idle", () => {
         this.tb.setObjectsScale();
       });
@@ -3086,29 +3118,51 @@ Threebox.prototype = {
   // Objects
   sphere: function(options2) {
     this.setDefaultView(options2, this.options);
-    return Sphere(options2, this.world);
+    let obj = Sphere(options2, this.world);
+    obj.threebox = this;
+    return obj;
   },
-  line,
-  label: Label,
-  tooltip: Tooltip,
+  line: function(options2) {
+    let obj = line(options2);
+    obj.threebox = this;
+    return obj;
+  },
+  label: function(options2) {
+    let obj = Label(options2);
+    obj.threebox = this;
+    return obj;
+  },
+  tooltip: function(options2) {
+    let obj = Tooltip(options2);
+    obj.threebox = this;
+    return obj;
+  },
   tube: function(options2) {
     this.setDefaultView(options2, this.options);
-    return tube(options2, this.world);
+    let obj = tube(options2, this.world);
+    obj.threebox = this;
+    return obj;
   },
   extrusion: function(options2) {
     this.setDefaultView(options2, this.options);
-    return extrusion(options2);
+    let obj = extrusion(options2);
+    obj.threebox = this;
+    return obj;
   },
   Object3D: function(options2) {
     this.setDefaultView(options2, this.options);
-    return Object3D(options2);
+    let obj = Object3D(options2);
+    obj.threebox = this;
+    return obj;
   },
   loadObj: async function loadObj$1(options2, cb) {
     this.setDefaultView(options2, this.options);
+    const tb = this;
     if (options2.clone === false) {
       return new Promise(
         async (resolve) => {
           loadObj(options2, cb, async (obj) => {
+            obj.threebox = tb;
             resolve(obj);
           });
         }
@@ -3117,7 +3171,9 @@ Threebox.prototype = {
       let cache = this.objectsCache.get(options2.obj);
       if (cache) {
         cache.promise.then((obj) => {
-          cb(obj.duplicate(options2));
+          let dupe = obj.duplicate(options2);
+          dupe.threebox = tb;
+          cb(dupe);
         }).catch((err) => {
           this.objectsCache.delete(options2.obj);
           console.error("Could not load model file: " + options2.obj);
@@ -3127,6 +3183,7 @@ Threebox.prototype = {
           promise: new Promise(
             async (resolve, reject) => {
               loadObj(options2, cb, async (obj) => {
+                obj.threebox = tb;
                 if (obj.duplicate) {
                   resolve(obj.duplicate());
                 } else {
@@ -3267,12 +3324,20 @@ Threebox.prototype = {
     this.setLayoutProperty(layerId, "visibility", visible ? "visible" : "none");
     this.labelRenderer.toggleLabels(layerId, visible);
   },
-  update: function() {
+  update: function(matrix) {
     if (this.map.repaint) this.map.repaint = false;
     var timestamp = Date.now();
     this.objects.animationManager.update(timestamp);
     this.updateLightHelper();
     this.renderer.resetState();
+    const gl = this.renderer.getContext();
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    if (this.mapboxVersion >= 3) {
+      gl.enable(gl.DEPTH_TEST);
+      gl.depthFunc(gl.LESS);
+      gl.depthMask(true);
+    }
     this.renderer.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
     if (this.options.passiveRendering === false) this.map.triggerRepaint();
@@ -3281,6 +3346,7 @@ Threebox.prototype = {
     if (!this.enableTooltips && obj.tooltip) {
       obj.tooltip.visibility = false;
     }
+    obj.threebox = this;
     this.world.add(obj);
     if (layerId) {
       obj.layer = layerId;
@@ -3380,8 +3446,8 @@ Threebox.prototype = {
     let azSin = Math.sin(azimuth2) * altRadius;
     this.lights.dirLight.position.set(azSin, azCos, alt);
     this.lights.dirLight.position.multiplyScalar(radius);
-    this.lights.dirLight.intensity = Math.max(alt, 0);
-    this.lights.hemiLight.intensity = Math.max(alt * 1, 0.1);
+    this.lights.dirLight.intensity = Math.max(alt, 0) * 5;
+    this.lights.hemiLight.intensity = Math.max(alt * 1, 0.1) * 3;
     this.lights.dirLight.updateMatrixWorld();
     this.updateLightHelper();
     if (this.map.loaded()) {
@@ -3449,18 +3515,18 @@ Threebox.prototype = {
     });
   },
   defaultLights: function() {
-    this.lights.ambientLight = new THREE.AmbientLight(new THREE.Color("hsl(0, 0%, 100%)"), 0.75);
+    this.lights.ambientLight = new THREE.AmbientLight(new THREE.Color("hsl(0, 0%, 100%)"), 3);
     this.scene.add(this.lights.ambientLight);
-    this.lights.dirLightBack = new THREE.DirectionalLight(new THREE.Color("hsl(0, 0%, 100%)"), 0.25);
+    this.lights.dirLightBack = new THREE.DirectionalLight(new THREE.Color("hsl(0, 0%, 100%)"), 1);
     this.lights.dirLightBack.position.set(30, 100, 100);
     this.scene.add(this.lights.dirLightBack);
-    this.lights.dirLight = new THREE.DirectionalLight(new THREE.Color("hsl(0, 0%, 100%)"), 0.25);
+    this.lights.dirLight = new THREE.DirectionalLight(new THREE.Color("hsl(0, 0%, 100%)"), 1);
     this.lights.dirLight.position.set(-30, 100, -100);
     this.scene.add(this.lights.dirLight);
   },
   realSunlight: function(helper = false) {
     this.renderer.shadowMap.enabled = true;
-    this.lights.dirLight = new THREE.DirectionalLight(16777215, 1);
+    this.lights.dirLight = new THREE.DirectionalLight(16777215, 5);
     this.scene.add(this.lights.dirLight);
     if (helper) {
       this.lights.dirLightHelper = new THREE.DirectionalLightHelper(this.lights.dirLight, 5);
@@ -3478,7 +3544,7 @@ Threebox.prototype = {
     this.lights.dirLight.shadow.camera.near = 1;
     this.lights.dirLight.shadow.camera.visible = true;
     this.lights.dirLight.shadow.camera.far = 4e8;
-    this.lights.hemiLight = new THREE.HemisphereLight(new THREE.Color(16777215), new THREE.Color(16777215), 0.6);
+    this.lights.hemiLight = new THREE.HemisphereLight(new THREE.Color(16777215), new THREE.Color(16777215), 3);
     this.lights.hemiLight.color.setHSL(0.661, 0.96, 0.12);
     this.lights.hemiLight.groundColor.setHSL(0.11, 0.96, 0.14);
     this.lights.hemiLight.position.set(0, 0, 50);

@@ -86,6 +86,8 @@ function loadObj(options, cb, promise) {
 			const s = utils.types.scale(options.scale, [1, 1, 1]);
 			obj.rotation.set(r[0], r[1], r[2]);
 			obj.scale.set(s[0], s[1], s[2]);
+			// Fix materials for Three.js r152+ color management and transparency
+			// fixMaterials(obj);
 			// [jscastro] normalize specular/metalness/shininess from meshes in FBX and GLB model as it would need 5 lights to illuminate them properly
 			if (options.normalize) { normalizeSpecular(obj); }
 			obj.name = "model";
@@ -113,7 +115,44 @@ function loadObj(options, cb, promise) {
 
 	};
 
+	// // Fix materials for Three.js r132+ transparency and r152+ color management
+	// function fixMaterials(model) {
+	// 	model.traverse(function (c) {
+	// 		if (c.isMesh) {
+	// 			let materials = Array.isArray(c.material) ? c.material : [c.material];
+	// 			materials.forEach(function (mat) {
+	// 				if (!mat) return;
+
+	// 				// Set colorSpace for color textures (Three.js r152+)
+	// 				if (mat.map) mat.map.colorSpace = THREE.SRGBColorSpace;
+	// 				if (mat.emissiveMap) mat.emissiveMap.colorSpace = THREE.SRGBColorSpace;
+
+	// 				// Fix GLTF transparency (Three.js r132+ issue)
+	// 				// Since r132, setting transparent=true on GLTF materials doesn't work properly
+	// 				// Need to use custom blending for transparency to display correctly
+	// 				let isTransparent = mat.transparent || mat.opacity < 1 || mat.alphaMap || mat.alphaTest > 0;
+
+	// 				// Also check for alpha in the base color texture
+	// 				if (mat.map && mat.map.format === THREE.RGBAFormat) {
+	// 					isTransparent = true;
+	// 				}
+
+	// 				if (isTransparent) {
+	// 					mat.transparent = true;
+	// 					mat.depthWrite = false;
+	// 					mat.blending = THREE.CustomBlending;
+	// 					mat.blendSrc = THREE.SrcAlphaFactor;
+	// 					mat.blendDst = THREE.OneMinusSrcAlphaFactor;
+	// 					mat.blendEquation = THREE.AddEquation;
+	// 					mat.needsUpdate = true;
+	// 				}
+	// 			});
+	// 		}
+	// 	});
+	// }
+
 	//[jscastro] some FBX/GLTF models have too much specular effects for mapbox
+	// Multipliers adjusted for physically-based lighting (Three.js r155+)
 	function normalizeSpecular(model) {
 		model.traverse(function (c) {
 
@@ -122,13 +161,13 @@ function loadObj(options, cb, promise) {
 				let specularColor;
 				if (c.material.type == 'MeshStandardMaterial') {
 
-					if (c.material.metalness) { c.material.metalness *= 0.1; }
-					if (c.material.glossiness) { c.material.glossiness *= 0.25; }
-					specularColor = new THREE.Color(12, 12, 12);
+					if (c.material.metalness) { c.material.metalness *= 0.3; }
+					if (c.material.glossiness) { c.material.glossiness *= 0.5; }
+					specularColor = new THREE.Color(0x0c0c0c);
 
 				} else if (c.material.type == 'MeshPhongMaterial') {
-					c.material.shininess = 0.1;
-					specularColor = new THREE.Color(20, 20, 20);
+					c.material.shininess = 0.3;
+					specularColor = new THREE.Color(0x141414);
 				}
 				if (c.material.specular && c.material.specular.isColor) {
 					c.material.specular = specularColor;
