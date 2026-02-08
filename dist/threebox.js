@@ -1113,7 +1113,6 @@ AnimationManager.prototype = {
           if (item.type === "playDefault") {
             object.activateAllActions();
             object.isPlaying = true;
-            object.animationMethod = requestAnimationFrame(this.update);
             object.mixer.update(object.clock.getDelta());
             object.threebox.map.repaint = true;
           }

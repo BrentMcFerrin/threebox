@@ -13,13 +13,11 @@ function CameraSync(map, camera, world) {
     this.active = true;
 
     this.camera.matrixAutoUpdate = false; // We're in charge of the camera now!
-    this.camera.matrixWorldAutoUpdate = false; // Three.js r150+: prevent auto world matrix recalculation
 
     // Postion and configure the world group so we can scale it appropriately when the camera zooms
     this.world = world || new THREE.Group();
     this.world.position.x = this.world.position.y = ThreeboxConstants.WORLD_SIZE / 2
     this.world.matrixAutoUpdate = false;
-    this.world.matrixWorldAutoUpdate = false; // Three.js r150+: prevent auto world matrix recalculation
 
     // set up basic camera state
     this.state = {
