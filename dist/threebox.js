@@ -473,6 +473,14 @@ CameraSync.prototype = {
     }
     const t = this.map.transform;
     this.camera.aspect = t.width / t.height;
+    if (this.map.tb && this.map.tb.renderer) {
+      const canvas = this.map.getCanvas();
+      if (this._lastCanvasWidth !== canvas.clientWidth || this._lastCanvasHeight !== canvas.clientHeight) {
+        this._lastCanvasWidth = canvas.clientWidth;
+        this._lastCanvasHeight = canvas.clientHeight;
+        this.map.tb.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+      }
+    }
     const offset = t.centerOffset || new THREE.Vector3();
     let farZ = 0;
     let furthestDistance = 0;
@@ -508,6 +516,7 @@ CameraSync.prototype = {
     }
     this.camera.projectionMatrix.elements[8] = -offset.x * 2 / t.width;
     this.camera.projectionMatrix.elements[9] = offset.y * 2 / t.height;
+    this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
     let cameraWorldMatrix = this.calcCameraMatrix(t._pitch, t.angle);
     if (t.elevation) cameraWorldMatrix.elements[14] = t._camera.position[2] * worldSize;
     this.camera.matrixWorld.copy(cameraWorldMatrix);

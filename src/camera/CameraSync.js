@@ -58,6 +58,17 @@ CameraSync.prototype = {
 
         const t = this.map.transform;
         this.camera.aspect = t.width / t.height; //bug fixed, if aspect is not reset raycast will fail on map resize
+
+        // Check if canvas size changed and update renderer for correct raycasting
+        if (this.map.tb && this.map.tb.renderer) {
+            const canvas = this.map.getCanvas();
+            if (this._lastCanvasWidth !== canvas.clientWidth || this._lastCanvasHeight !== canvas.clientHeight) {
+                this._lastCanvasWidth = canvas.clientWidth;
+                this._lastCanvasHeight = canvas.clientHeight;
+                this.map.tb.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            }
+        }
+
         const offset = t.centerOffset || new THREE.Vector3(); //{ x: t.width / 2, y: t.height / 2 };
         let farZ = 0;
         let furthestDistance = 0;
@@ -112,6 +123,8 @@ CameraSync.prototype = {
         }
         this.camera.projectionMatrix.elements[8] = -offset.x * 2 / t.width;
         this.camera.projectionMatrix.elements[9] = offset.y * 2 / t.height;
+        // Update inverse projection matrix for raycasting
+        this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
 
         // Unlike the Mapbox GL JS camera, separate camera translation and rotation out into its world matrix
         // If this is applied directly to the projection matrix, it will work OK but break raycasting
